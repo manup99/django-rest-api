@@ -1,23 +1,49 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Status
+from django.contrib.auth.models import User
 '''Serializers->JSON'''
 '''Serializers->validate Data'''
-class UserSerializer(serializers.ModelSerializer):
+class RegisterSerializer(serializers.ModelSerializer):
+    password=serializers.CharField(style={'input_type':'password'},write_only=True)
+    password1=serializers.CharField(style={'input_type':'password'},write_only=True)
     class Meta:
-        model = User
-        fields = ['email', 'username', 'password']
-        extra_kwargs = {'password': {'write_only': True}}
+        model=User
+        fields=[
+            'username',
+            'email',
+            'password',
+            'password1'
+        ]
+    def validate_username(self,value):
+        qs=User.objects.filter(username=value)
+        if qs.exists():
+            raise serializers.ValidationError('A user with that username already exists')
+        else:
+            return value
 
-    def create(self, validated_data):
-        print('hello')
-        user = User(
-            email=validated_data['email'],
-            username=validated_data['username']
-        )
-        user.set_password(validated_data['password'])
+    def validate_email(self, value):
+        qs = User.objects.filter(email=value)
+        if qs.exists():
+            raise serializers.ValidationError('A user with that email already exists')
+        else:
+            return value
+    def validate(self,data):
+        password1=data.get('password',None)
+        password2=data.get('password1',None)
+        if password1!=password2:
+            raise serializers.ValidationError('Sorry password do not match with each other')
+        else:
+            return data
+    def create(self,validated_data):
+        print(validated_data)
+        user=User(username=validated_data.get('username'),
+                  email=validated_data.get('email')
+                  )
+        user.set_password(validated_data.get('password'))
         user.save()
         return user
+
 class StatusSerializer(serializers.ModelSerializer):
     class Meta:
         model=Status

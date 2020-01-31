@@ -1,11 +1,17 @@
 from django.shortcuts import render
-
+from rest_framework import permissions,authentication
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import *
 from .serializers import *
 from rest_framework import generics,mixins
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate,login,logout
+from django.db.models import Q
+
+###For generating manual tokens
+from rest_framework_simplejwt.tokens import RefreshToken
 # Create your views here.
 
 
@@ -110,10 +116,55 @@ class StatusView1(generics.RetrieveUpdateDestroyAPIView):
     def patch(self,request,*args,**kwargs):
         return self.partial_update(request,*args,**kwargs)
 
+class AuthView(APIView):
+    authentication_classes=[]
+    permission_classes=[permissions.AllowAny]
+    def post(self,request,*args,**kwargs):
+        print(request.user)
+        data=request.POST.get('hello')
+        username=request.POST.get('username')
+        password=request.POST.get('password')
+        email=request.POST.get('email')
+        x=User.objects.create_user(username=username,password=password,email=email)
+        user=authenticate(request,username=username,password=password)
+        if user is not None:
+            if user.is_active:
+                login(request,user)
+                print(request.user)
+                return Response({'loggedIN':'Ho gaye login'})
+        return Response({'token':'hello'})
+
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+class LoginView(APIView):
+    authentication_classes=[]
+    permission_classes=[permissions.AllowAny]
+    def post(self,request,*args,**kwargs):
+        username=request.POST.get('username')
+        password=request.POST.get('password')
+        user=authenticate(username=username,password=password)
+        qs=User.objects.filter(
+            Q(username__iexact=username) |
+            Q(email__iexact=username)##We can also use email here
+        )
+        if qs.count()==1:
+            user_obj=qs.first()
+            if user_obj.check_password(password):
+                user=user_obj
+                return Response(get_tokens_for_user(user))
+        return Response({"error":"Sorry bro nahi ho paega"})
 
 
-
-
+class RegisterSerializerView(generics.CreateAPIView):
+    permission_classes=[permissions.AllowAny]
+    authentication_classes=[]
+    queryset=User.objects.all()
+    serializer_class=RegisterSerializer
 
 
 

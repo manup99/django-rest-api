@@ -17,10 +17,10 @@ class StatusForms(forms.ModelForm):
     #     return data
     def clean(self,*args,**kwargs):
         data=self.cleaned_data
-        content=data.get('content')
+        content=data.get('content',None)
         if content=="":
             content=None
-        image=data.get('image')
+        image=data.get('image',None)
         if content is None and image is None:
             raise forms.ValidationError('COntent or image is required')
         return data
