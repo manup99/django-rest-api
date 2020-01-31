@@ -1,8 +1,23 @@
 from rest_framework import serializers
-
+from django.contrib.auth.models import User
 from .models import Status
 '''Serializers->JSON'''
 '''Serializers->validate Data'''
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email', 'username', 'password']
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        print('hello')
+        user = User(
+            email=validated_data['email'],
+            username=validated_data['username']
+        )
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
 class StatusSerializer(serializers.ModelSerializer):
     class Meta:
         model=Status
@@ -12,6 +27,7 @@ class StatusSerializer(serializers.ModelSerializer):
             'content',
             'id'
         ]
+    read_only_fields=['user']
     # def valid_<field name>(self,value)
     def valid_content(self,value):
         if len(value)>10:

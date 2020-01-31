@@ -80,7 +80,35 @@ class StatusDeleteAPIView(generics.DestroyAPIView):
     queryset=Status.objects.all()
     serializer_class=StatusSerializer
     lookup_field='id'
+class StatusView(mixins.CreateModelMixin,generics.ListAPIView):
+    permission_classes=[]
+    authentication_classes=[]
+    queryset=Status.objects.all()
+    serializer_class=StatusSerializer
 
+    def get_queryset(self):
+        qs=Status.objects.all()
+        q=self.request.GET.get('q')
+        if q is not None:
+            qs=qs.filter(content__icontains=q)
+        return qs
+    def post(self,request,*args,**kwargs):
+        return self.create(request,*args,**kwargs)
+
+class StatusView1(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes=[]
+    authentication_classes=[]
+    queryset=Status.objects.all()
+    serializer_class=StatusSerializer
+    lookup_field='id'
+    def get(self,request,*args,**kwargs):
+        return self.retrieve(request,*args,**kwargs)
+    def put(self,request,*args,**kwargs):
+        return self.update(request,*args,**kwargs)
+    def delete(self,request,*args,**kwargs):
+        return self.destroy(request,*args,**kwargs)
+    def patch(self,request,*args,**kwargs):
+        return self.partial_update(request,*args,**kwargs)
 
 
 
